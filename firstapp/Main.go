@@ -68,12 +68,19 @@ func printcar(c car) {
 	fmt.Println("year :", c.Year)
 }
 
-func getCar(c *car) *car {
-	return &car{
+func getCar(c *car) car {
+	return car{
 		brand: c.brand,
 		model: c.model,
 		Year:  c.Year,
 	}
+}
+
+func (c *car) updateCar() car {
+	c.brand = "honda"
+	c.model = "hatchback"
+	c.Year = 200
+	return *c
 }
 
 func checkCansplitArray(inputArr []int) int {
@@ -156,6 +163,15 @@ type geometri interface {
 }
 
 func main() {
+	car := car{
+		brand: "toyota",
+		model: "Kijang",
+		Year:  14,
+	}
+	fmt.Println(getCar(car))
+	printcar(car)
+	car.updateCar()
+	printcar(car)
 	// intialization
 	rect := Rectangle{width: 30, length: 30}
 	circle := Circle{radius: 20}
