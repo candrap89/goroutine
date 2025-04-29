@@ -96,6 +96,9 @@ func checkCansplitArray(inputArr []int) int {
 }
 
 func isPaliandrome(numberInput int) int {
+	// sorting from minimum to maximum
+	//sort.Slice(arr, func(i, j int) bool { return arr[i] < arr[j] })
+
 	original := numberInput
 	reversed := 0
 
@@ -140,12 +143,16 @@ func calculatesArea(s shape) float32 {
 	return s.area()
 }
 
+// interface must be implemented
 func (c Circle) perimeter() float32 {
 	return 2 * math.Phi * c.radius
 }
 
 func (r Rectangle) perimeter() float32 {
 	return r.length*2 + r.width*2
+}
+
+type geometri interface {
 }
 
 func main() {
