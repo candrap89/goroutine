@@ -28,9 +28,138 @@ var (
 	value float32 = 100000000
 )
 
+func printslice(slice []int) {
+	for i := 0; i < len(slice); i++ {
+		fmt.Println(slice[i])
+	}
+}
+
+func printmap(m map[string]int) {
+	for k, v := range m {
+		fmt.Println(k, v)
+	}
+}
+
+func reverse(n int) int {
+	rev := 0
+	for n != 0 {
+		rev = rev*10 + n%10
+		fmt.Println()
+		n /= 10
+		fmt.Printf("rev %v n %v", rev, n)
+
+		// rev 1 n = 432
+		// rev 10 + 2 = 12 n 43
+		// rev 120 + 3 = 123 n 4
+		// rev 1230 + 4 = 1234 n 0
+	}
+	return rev
+}
+
+type car struct {
+	brand string
+	model string
+	Year  int
+}
+
+func printcar(c car) {
+	fmt.Println("brancd :", c.brand)
+	fmt.Println("model :", c.model)
+	fmt.Println("year :", c.Year)
+}
+
+func getCar(c *car) *car {
+	return &car{
+		brand: c.brand,
+		model: c.model,
+		Year:  c.Year,
+	}
+}
+
+func checkCansplitArray(inputArr []int) int {
+	total := 0
+
+	for _, value := range inputArr {
+		total += value
+	}
+
+	leftSum := 0
+	for i := 0; i < len(inputArr); i++ {
+		leftSum += inputArr[i]
+		// always new right sum
+		rightSum := total - leftSum
+		if leftSum == rightSum {
+			return 1
+		}
+	}
+	return 0
+}
+
+func isPaliandrome(numberInput int) int {
+	original := numberInput
+	reversed := 0
+
+	if numberInput < 0 {
+		return 0
+	}
+	for numberInput != 0 {
+		remainder := numberInput % 10
+		reversed = reversed*10 + remainder
+		numberInput /= 10
+	}
+	if original == reversed {
+		return 1
+	} else {
+		return 0
+	}
+}
+
+type shape interface {
+	area() float32
+	perimeter() float32
+}
+
+type Rectangle struct {
+	width, length float32
+}
+
+type Circle struct {
+	radius float32
+}
+
+func (r Rectangle) area() float32 {
+	return r.length * r.width
+}
+
+func (c Circle) area() float32 {
+	return math.Phi * c.radius * c.radius
+}
+
+// wiring up declared
+func calculatesArea(s shape) float32 {
+	return s.area()
+}
+
+func (c Circle) perimeter() float32 {
+	return 2 * math.Phi * c.radius
+}
+
+func (r Rectangle) perimeter() float32 {
+	return r.length*2 + r.width*2
+}
+
 func main() {
+	// intialization
+	rect := Rectangle{width: 30, length: 30}
+	circle := Circle{radius: 20}
+	fmt.Println("calculate area rectangle", calculatesArea(rect))
+	fmt.Println("calculate area circle", calculatesArea(circle))
+
 	//struct_example()
 	//constants()
+	fmt.Println("reverse of 4321 is", reverse(4321))
+	fmt.Println(checkCansplitArray([]int{1, 3, 3, 4, 3}))
+	fmt.Println(isPaliandrome(123))
 	array()
 	//slice()
 	//make_slice()
@@ -45,7 +174,7 @@ func main() {
 	//get_method()
 	//call_api()
 	//pointer()
-	test_pointer_again()
+	// test_pointer_again()
 	// for i := 0; i < 5; i++ {
 	// 	sayMessage("haloo Goooo", i)
 	// }
@@ -681,6 +810,12 @@ func map_example() {
 
 	// map of array of integer
 	m := map[[3]int]string{} // array is valid map key but slice is not
+
+	newmap := make(map[int]string)
+	newmap[1] = "one"
+	newmap[2] = "two"
+
+	fmt.Println(newmap[1])
 
 	fmt.Println(statePopulation, "map baru :", m)
 	fmt.Println(statePopulation["california"])
