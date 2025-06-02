@@ -168,7 +168,7 @@ func main() {
 		model: "Kijang",
 		Year:  14,
 	}
-	fmt.Println(getCar(car))
+	fmt.Println(getCar(&car))
 	printcar(car)
 	car.updateCar()
 	printcar(car)
