@@ -1,0 +1,375 @@
+{
+    "base_info": {
+      "acl2": 1750745648,
+      "cb_flag": 1,
+      "combine_esf": 2,
+      "create_time": 1750320032,
+      "forderid": "5722431076671488466",
+      "is_dropship": 0,
+      "is_rms": 0,
+      "local_whs_id": "",
+      "mpl_ros_eligible": 0,
+      "one_awb": false,
+      "order_create_time": 1750313612,
+      "ordersn": "2506190BWU33T5",
+      "pickup_time": 0,
+      "return_whs_id": "MXC",
+      "ros_optin": 0,
+      "shipping_channel_id": "100001",
+      "whs_id": "ECP04",
+      "whs_validation": true
+    },
+    "checkout_info": {
+      "checkout_seller_address": "",
+      "checkout_seller_address_city": "",
+      "checkout_seller_address_district": "",
+      "checkout_seller_address_state": "",
+      "checkout_seller_address_street": ""
+    },
+    "deliver_info": {
+      "deliver_address": "Laguna de san Cristobal, 210, Casa amarilla con barandal negro",
+      "deliver_address_id": 109889741,
+      "deliver_city": "Chihuahua",
+      "deliver_country": "MX",
+      "deliver_detail_address": "",
+      "deliver_district": "Chihuahua",
+      "deliver_email": "kimrdz.25@gmail.com",
+      "deliver_latitude": "",
+      "deliver_longitude": "",
+      "deliver_name": "Kimberly Ruelas Amador",
+      "deliver_phone": "526142238878",
+      "deliver_postal_code": "31203",
+      "deliver_state": "Chihuahua",
+      "deliver_street": "San Felipe V",
+      "deliver_user_id": 758999027,
+      "delivery_address_label": 2,
+      "kyc_name": "KIMBERLY ATENEA RUELAS AMADOR",
+      "kyc_phone": "",
+      "kyc_population_id": "RUAK991013MCHLMM06"
+    },
+    "forder_info": {
+      "actual_paid": 476,
+      "actual_price": 476,
+      "advanced_booking_order_id": 0,
+      "bpsf_sst": "0.00",
+      "buyer_account_email": "",
+      "buyer_account_phone": "526142238878",
+      "buyer_paid_shipping_fee": 0,
+      "buyer_remark": "",
+      "cache_order_type": 0,
+      "channel_priority_group_ids": [
+        0
+      ],
+      "cod_amount": 0,
+      "cogs": 476,
+      "cogs_non_tax": 400,
+      "currency_rate": "0.05175394106261",
+      "deliver_cvs_address_id": 109889741,
+      "delivery_instruction": "",
+      "dropship_name": "",
+      "dropship_phone": "",
+      "headquarter_info": {},
+      "insurance_premium": [
+        0
+      ],
+      "is_global_fulfill": false,
+      "is_local_whs": false,
+      "is_resell": 0,
+      "is_sod_bool": false,
+      "is_taxable_shop": 0,
+      "origin_shipping_fee": 130,
+      "payment_method": "CYBERSOURCE",
+      "preferred_delivery_option": 0,
+      "price_before_discount": 476,
+      "purchase_time": 1750313647,
+      "seller_account_email": "",
+      "seller_address_id": 0,
+      "seller_info": {
+        "seller_registered_address": "",
+        "seller_registered_name": "",
+        "seller_registered_phone": "",
+        "seller_user_id": 1286635772,
+        "seller_username": ""
+      },
+      "seller_remark": "",
+      "seller_tax_number": "",
+      "sender_address_id": 0,
+      "sender_user_id": 0,
+      "sender_user_name": "",
+      "ship_by_date": 1750486448,
+      "shipping_carrier": "Estándar Rápido",
+      "shipping_confirm_time": 1750313648,
+      "shipping_fee_group_ids": [
+        0
+      ],
+      "shipping_price": 0,
+      "shipping_proof": "",
+      "shipping_traceno": "",
+      "shop_id": "1286364466",
+      "shop_infos": [
+        {
+          "shop_id": "1286364466"
+        }
+      ],
+      "shop_name": "fengchenglasses.mx",
+      "store_id": "109889741",
+      "tax_number": "RUAK991013BR8",
+      "tax_regulation_id": 14,
+      "total_price": 476,
+      "trade_in_flag": 0,
+      "trade_in_info": null
+    },
+    "order_info": {
+      "edt_info": {
+        "apt": 1.1439583,
+        "cdt_max": 15.7551,
+        "cdt_min": 9.5255,
+        "edt_max_dt": "2025-07-11",
+        "edt_min_dt": "2025-06-29",
+        "he_cdt": 6
+      },
+      "ext_info": {
+        "logistics_info": {
+          "logistics_flag": 536870920
+        },
+        "shop_snapshot": {
+          "shop": {
+            "ext_info": {
+              "logistics_info": ""
+            },
+            "shop_id": 1286364466
+          },
+          "snapshot_id": 7007086146
+        }
+      },
+      "forward_order_sn": "",
+      "order_id": 204012812652357,
+      "seller": {
+        "seller_phone": "000188898440577",
+        "username": "fengchenglasses.mx"
+      }
+    },
+    "pickup_info": {
+      "pickup_address": "Logistics Sorting Hub, ZheJiang YiWu Si hai road 1666",
+      "pickup_city": "Jinhua",
+      "pickup_country": "CN",
+      "pickup_detail_address": "",
+      "pickup_district": "Yiwu",
+      "pickup_email": "1257087841@qq.com",
+      "pickup_latitude": "29.331721",
+      "pickup_longitude": "120.04741",
+      "pickup_name": "Logistics Sorting Hub",
+      "pickup_phone": "86075589351900",
+      "pickup_postal_code": "322000",
+      "pickup_state": "Zhejiang",
+      "pickup_street": ""
+    },
+    "region_policy_info": {
+      "br_invoice_access_key": "",
+      "br_invoice_issue_time": 0,
+      "br_invoice_number": 0,
+      "br_invoice_number_str": "",
+      "br_invoice_products_total_value": 0,
+      "br_invoice_serial_number": 0,
+      "br_invoice_serial_number_str": "",
+      "br_invoice_tax_code_operations_services": 0,
+      "br_invoice_tax_code_operations_services_str": "",
+      "br_invoice_total_value": 0,
+      "br_legal_entity_name": "",
+      "br_state_registered_no": "",
+      "in_cgst_tax_amount": 0,
+      "in_igst_tax_amount": 0,
+      "in_invoice_amount": 0,
+      "in_invoice_issue_time": 0,
+      "in_invoice_number": "",
+      "in_sgst_tax_amount": 0
+    },
+    "return_info": {
+      "return_address": "Calle5 #46 08100, Agrícola Pantitlán, Iztacalco, Ciudad de México",
+      "return_city": "Iztacalco",
+      "return_country": "MX",
+      "return_district": "Ciudad de México",
+      "return_email": "",
+      "return_latitude": "19.402739055275",
+      "return_longitude": "-99.061924433439",
+      "return_name": "Shopee Return Center CDMX",
+      "return_phone": "+525540001920",
+      "return_postal_code": "08100",
+      "return_state": "Ciudad de México",
+      "return_street": "Agrícola Pantitlán"
+    },
+    "skus": [
+      {
+        "brand": "",
+        "category_display": "",
+        "cogs_non_tax": 200,
+        "current_category": "",
+        "current_category_display": "",
+        "dg_specific_type": 0,
+        "global_category_L1": "Fashion Accessories",
+        "global_category_L2": "Eyewear",
+        "global_category_L3": "Sunglasses",
+        "global_category_L4": "",
+        "global_category_L5": "",
+        "global_category_display_L1": "Accesorios de Moda",
+        "global_category_display_L2": "Lentes",
+        "global_category_display_L3": "Lentes de Sol",
+        "global_category_display_L4": "",
+        "global_category_display_L5": "",
+        "global_category_id": 100151,
+        "global_category_id_L1": 100009,
+        "global_category_id_L2": 100030,
+        "global_category_id_L3": 100151,
+        "global_category_id_L4": 0,
+        "global_category_id_L5": 0,
+        "height": 5,
+        "installation_flag": 0,
+        "installation_fulfillment_channel_id": 0,
+        "installation_masking_channel_id": 0,
+        "is_dg": 0,
+        "is_pre_order": false,
+        "item_id": 26285977320,
+        "item_name": "2025 Nuevas Gafas De Sol De Los Hombres De La Moda ; Casuales De Para Conducir Y Viajar 6034",
+        "length": 5,
+        "model_certificate_info": {
+          "bar_code": "",
+          "qualified_certificate": 1,
+          "sku_no": "28585980153_237793760078",
+          "trade_name": "",
+          "trade_type": ""
+        },
+        "model_id": 216065205731,
+        "model_name": "C6,SIN CAJA",
+        "net_amount": 0,
+        "order_amount": 476,
+        "order_id": 204012812652357,
+        "order_item": {
+          "item_snapshot": {
+            "item": {
+              "category_id": 0,
+              "country": "MX",
+              "ext_info": {
+                "cats": null,
+                "logistics_info": "{\"100001\":{\"enabled\":true,\"cover_shipping_fee\":false,\"size\":0}}"
+              },
+              "images": "cn-11134207-7ras8-m9cx9gjqcysda4",
+              "name": "2025 Nuevas Gafas De Sol De Los Hombres De La Moda ; Casuales De Para Conducir Y Viajar 6034",
+              "sku": "6034"
+            },
+            "model": {
+              "name": "C6,SIN CAJA",
+              "sku": "6034"
+            }
+          }
+        },
+        "order_quantity": 2,
+        "order_sn": "2506190BWU33T5",
+        "po_item": false,
+        "product_desc": "",
+        "product_name": "2025 Nuevas Gafas De Sol De Los Hombres De La Moda ; Casuales De Para Conducir Y Viajar 6034",
+        "quantity": 1,
+        "selected_original_price": 476,
+        "seller_listing_photo": "",
+        "serial_number": null,
+        "shop_name": "fengchenglasses.mx",
+        "single_item_price": 238,
+        "sku": "6034",
+        "sub_category_display": "",
+        "sub_sub_category_display": "",
+        "tax_info": [
+          {
+            "lvg_tag": 0,
+            "tax_rate": 19000
+          }
+        ],
+        "weight": 300,
+        "width": 10
+      },
+      {
+        "brand": "",
+        "category_display": "",
+        "cogs_non_tax": 200,
+        "current_category": "",
+        "current_category_display": "",
+        "dg_specific_type": 0,
+        "global_category_L1": "Fashion Accessories",
+        "global_category_L2": "Eyewear",
+        "global_category_L3": "Sunglasses",
+        "global_category_L4": "",
+        "global_category_L5": "",
+        "global_category_display_L1": "Accesorios de Moda",
+        "global_category_display_L2": "Lentes",
+        "global_category_display_L3": "Lentes de Sol",
+        "global_category_display_L4": "",
+        "global_category_display_L5": "",
+        "global_category_id": 100151,
+        "global_category_id_L1": 100009,
+        "global_category_id_L2": 100030,
+        "global_category_id_L3": 100151,
+        "global_category_id_L4": 0,
+        "global_category_id_L5": 0,
+        "height": 5,
+        "installation_flag": 0,
+        "installation_fulfillment_channel_id": 0,
+        "installation_masking_channel_id": 0,
+        "is_dg": 0,
+        "is_pre_order": false,
+        "item_id": 26285977320,
+        "item_name": "2025 Nuevas Gafas De Sol De Los Hombres De La Moda ; Casuales De Para Conducir Y Viajar 6034",
+        "length": 5,
+        "model_certificate_info": {
+          "bar_code": "",
+          "qualified_certificate": 1,
+          "sku_no": "28585980153_237793760068",
+          "trade_name": "",
+          "trade_type": ""
+        },
+        "model_id": 216065205721,
+        "model_name": "C1,SIN CAJA",
+        "net_amount": 0,
+        "order_amount": 476,
+        "order_id": 204012812652357,
+        "order_item": {
+          "item_snapshot": {
+            "item": {
+              "category_id": 0,
+              "country": "MX",
+              "ext_info": {
+                "cats": null,
+                "logistics_info": "{\"100001\":{\"enabled\":true,\"cover_shipping_fee\":false,\"size\":0}}"
+              },
+              "images": "cn-11134207-7ras8-m9cx9g6ow25u5b",
+              "name": "2025 Nuevas Gafas De Sol De Los Hombres De La Moda ; Casuales De Para Conducir Y Viajar 6034",
+              "sku": "6034"
+            },
+            "model": {
+              "name": "C1,SIN CAJA",
+              "sku": "6034"
+            }
+          }
+        },
+        "order_quantity": 2,
+        "order_sn": "2506190BWU33T5",
+        "po_item": false,
+        "product_desc": "",
+        "product_name": "2025 Nuevas Gafas De Sol De Los Hombres De La Moda ; Casuales De Para Conducir Y Viajar 6034",
+        "quantity": 1,
+        "selected_original_price": 476,
+        "seller_listing_photo": "",
+        "serial_number": null,
+        "shop_name": "fengchenglasses.mx",
+        "single_item_price": 238,
+        "sku": "6034",
+        "sub_category_display": "",
+        "sub_sub_category_display": "",
+        "tax_info": [
+          {
+            "lvg_tag": 0,
+            "tax_rate": 19000
+          }
+        ],
+        "weight": 300,
+        "width": 10
+      }
+    ]
+  }
