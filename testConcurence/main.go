@@ -1,386 +1,453 @@
 package main
 
 import (
-	"crypto/hmac"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/base64"
-	"encoding/json"
+	"database/sql"
+	"encoding/csv"
 	"fmt"
-	"math/big"
+	"io"
+	"os"
+	"strconv"
 	"strings"
-	"sync"
-	"time"
 
-	"github.com/google/uuid"
+	_ "github.com/go-sql-driver/mysql"
 )
 
-func prime(n int, output chan []int, wg *sync.WaitGroup) {
-	defer wg.Done()
-	var prime []int
-	for i := 0; i < n; i++ {
-		if isPrima(i) {
-			prime = append(prime, i)
-		}
-	}
-	output <- prime
-}
+const (
+	dbHost = "master.shopee_lcs.mysql.cloud.test.shopee.io"
+	dbPort = "6606"
+	dbUser = "sz_sc_test2"
+	dbPass = "6vJaoy5HHiPP0ms_sUnO"
+	dbName = "entry_task"
 
-func isPrima(n int) bool {
-	if n <= 1 {
-		return false
-	}
-	for i := 2; i < n; i++ {
-		if n%i == 0 {
-			return false
-		}
-	}
-	return true
-}
+	// Batch size for database inserts
+	batchSize = 100
 
-func fibonaci(n int, ch chan []int, wg *sync.WaitGroup) {
-	defer wg.Done()
-	if n <= 0 {
-		ch <- []int{}
-	}
-
-	fib := make([]int, n)
-	fib[0] = 0
-	if n > 1 {
-		fib[1] = 1
-	}
-	for i := 2; i < n; i++ {
-		fib[i] = fib[i-1] + fib[i-2]
-	}
-	ch <- fib
-
-}
+	// Start from row number (set to 0 to start from beginning, or set to specific row to resume)
+	// Row 1 is the header, so startRow = 2 means skip header and start from first data row
+	// startRow = 835482 means skip until row 835482
+	startRow = 1467311
+)
 
 func main() {
+	csvPath := "/Users/IDSP34746/Documents/2025-11-21-16-23-05-b3331af2-50b7-4c89-b08c-a9bb61243268.csv"
 
-	generateJWTCreateOrder()
-	generateJWTListOrder()
-	generateJWTUpdateOrder()
+	// Connect to database
+	db, err := connectDB()
+	if err != nil {
+		fmt.Printf("Error connecting to database: %v\n", err)
+		return
+	}
+	defer db.Close()
 
-	// Channel untuk komunikasi antar goroutine
-	primeCh := make(chan []int)
-	fibCh := make(chan []int)
-
-	// contoh concurency
-	var wg sync.WaitGroup
-	wg.Add(2)
-
-	// Menjalankan fungsi dalam goroutine
-	go prime(10, primeCh, &wg)
-	go fibonaci(10, fibCh, &wg)
-
-	// Menunggu goroutine selesai
-	go func() {
-		wg.Wait()
-		close(primeCh)
-		close(fibCh)
-	}()
-
-	// Menerima hasil dari channel
-	primes := <-primeCh
-	fibonacci := <-fibCh
-
-	// Menampilkan hasil
-	fmt.Println("Bilangan Prima:", primes)
-	fmt.Println("Bilangan Fibonacci:", fibonacci)
-
+	// Process CSV row by row to avoid loading entire file into memory
+	err = processCSVStreaming(csvPath, db)
+	if err != nil {
+		fmt.Printf("Error processing CSV: %v\n", err)
+		return
+	}
 }
 
-func base64UrlEncode(data []byte) string {
-	return strings.TrimRight(base64.URLEncoding.EncodeToString(data), "=")
+// processCSVStreaming processes CSV file row by row to minimize memory usage
+func processCSVStreaming(csvPath string, db *sql.DB) error {
+	// Open the CSV file
+	file, err := os.Open(csvPath)
+	if err != nil {
+		return fmt.Errorf("failed to open file: %w", err)
+	}
+	defer file.Close()
+
+	// Create CSV reader
+	reader := csv.NewReader(file)
+
+	// Batch for inserts
+	batch := make([]logData, 0, batchSize)
+	rowCount := 0
+	insertCount := 0
+
+	// Skip to startRow if specified
+	if startRow > 1 {
+		fmt.Printf("Skipping to row %d...\n", startRow)
+		for rowCount < startRow {
+			_, err := reader.Read()
+			if err != nil {
+				if err == io.EOF {
+					return fmt.Errorf("reached end of file before reaching row %d", startRow)
+				}
+				return fmt.Errorf("failed to read CSV row while skipping: %w", err)
+			}
+			rowCount++
+			if rowCount%100000 == 0 {
+				fmt.Printf("Skipped %d rows...\n", rowCount)
+			}
+		}
+		fmt.Printf("Reached row %d, starting processing...\n", rowCount)
+	}
+
+	// Read and process row by row
+	for {
+		record, err := reader.Read()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return fmt.Errorf("failed to read CSV row: %w", err)
+		}
+
+		rowCount++
+
+		// Skip header row (only if we started from beginning)
+		if rowCount == 1 && startRow <= 1 {
+			continue
+		}
+
+		// CSV format: @az,@id,@message,@sequence,@timestamp
+		if len(record) < 3 {
+			continue
+		}
+
+		message := record[2]
+
+		// Extract request payload from message
+		requestPayload := extractRequestPayload(message)
+		if requestPayload == "" {
+			continue
+		}
+
+		// Extract resource_ids from the payload
+		resourceIDs := extractResourceIDs(requestPayload)
+		// Extract request ID from message
+		requestID := extractRequestID(message)
+		// Extract tracking number from payload
+		trackingNumber := extractTrackingNumber(requestPayload)
+
+		// Parse timestamp from CSV (last column, index 4)
+		var timestamp int64
+		if len(record) >= 5 {
+			if ts, err := strconv.ParseInt(record[4], 10, 64); err == nil {
+				timestamp = ts
+			}
+		}
+
+		// Add to batch
+		batch = append(batch, logData{
+			id:             0,
+			payload:        requestPayload,
+			rawMessage:     message,
+			requestID:      requestID,
+			timestamps:     timestamp,
+			resourceID:     resourceIDs,
+			trackingNumber: trackingNumber,
+		})
+
+		// Insert batch when it reaches batchSize
+		if len(batch) >= batchSize {
+			if err := insertBatch(db, batch); err != nil {
+				return fmt.Errorf("failed to insert batch: %w", err)
+			}
+			insertCount += len(batch)
+			fmt.Printf("Processed %d rows, inserted %d records\n", rowCount, insertCount)
+			// Clear batch to free memory
+			batch = batch[:0]
+		}
+	}
+
+	// Insert remaining records
+	if len(batch) > 0 {
+		if err := insertBatch(db, batch); err != nil {
+			return fmt.Errorf("failed to insert final batch: %w", err)
+		}
+		insertCount += len(batch)
+	}
+
+	fmt.Printf("Processing complete. Total rows: %d, Total inserted: %d\n", rowCount, insertCount)
+	return nil
 }
 
-const letterBytes = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-
-func signHS256(message, secret string) string {
-	h := hmac.New(sha256.New, []byte(secret))
-	h.Write([]byte(message))
-	signature := h.Sum(nil)
-	return base64UrlEncode(signature)
+// logData represents a single log entry
+type logData struct {
+	id             int
+	payload        string
+	rawMessage     string
+	requestID      string
+	timestamps     int64
+	resourceID     string
+	trackingNumber string
 }
 
-func randomString(n int) string {
-	result := make([]byte, n)
-	for i := range result {
-		num, _ := rand.Int(rand.Reader, big.NewInt(int64(len(letterBytes))))
-		result[i] = letterBytes[num.Int64()]
+// extractRequestPayload extracts the request payload from a message string
+// It looks for content after "request body:" or "http raw request body:" (case insensitive)
+func extractRequestPayload(message string) string {
+	// Convert to lowercase for case-insensitive search
+	lowerMessage := strings.ToLower(message)
+
+	// Look for various markers that indicate request body
+	markers := []string{
+		"http raw request body:",
+		"http raw request body :",
+		"request body:",
+		"request body :",
+		"requestbody:",
+		"requestbody :",
 	}
-	return string(result)
+
+	var startIdx int = -1
+	for _, marker := range markers {
+		idx := strings.Index(lowerMessage, strings.ToLower(marker))
+		if idx != -1 {
+			startIdx = idx + len(marker)
+			break
+		}
+	}
+
+	if startIdx == -1 {
+		// If no marker found, return empty string
+		return ""
+	}
+
+	// Extract the payload (everything after the marker)
+	payload := message[startIdx:]
+
+	// Trim whitespace
+	payload = strings.TrimSpace(payload)
+
+	return payload
 }
 
-func randomDigits(n int) string {
-	result := make([]byte, n)
-	for i := range result {
-		num, _ := rand.Int(rand.Reader, big.NewInt(10)) // digits 0-9
-		result[i] = byte('0') + byte(num.Int64())
+// extractResourceIDs extracts resource_ids from a JSON payload string
+// Returns empty string "" if not found
+func extractResourceIDs(payload string) string {
+	// Search for "resource_ids": in the payload (handle both escaped and unescaped quotes)
+	markers := []string{
+		`"resource_ids":`,
+		`""resource_ids"":`,
+		`"resource_ids" :`,
+		`""resource_ids"" :`,
 	}
-	return string(result)
+	var startIdx int = -1
+	for _, marker := range markers {
+		idx := strings.Index(payload, marker)
+		if idx != -1 {
+			startIdx = idx + len(marker)
+			break
+		}
+	}
+
+	if startIdx == -1 {
+		return ""
+	}
+	// Skip whitespace after the colon
+	for startIdx < len(payload) && (payload[startIdx] == ' ' || payload[startIdx] == '\t') {
+		startIdx++
+	}
+	if startIdx >= len(payload) {
+		return ""
+	}
+	// Find the start of the array (should be '[')
+	if payload[startIdx] != '[' {
+		return ""
+	}
+	// Find the matching closing bracket ']'
+	depth := 0
+	endIdx := startIdx
+	for endIdx < len(payload) {
+		switch payload[endIdx] {
+		case '[':
+			depth++
+		case ']':
+			depth--
+			if depth == 0 {
+				// Extract the array including brackets
+				arrayStr := payload[startIdx : endIdx+1]
+				// Remove any pipes if present
+				arrayStr = strings.ReplaceAll(arrayStr, "|", "")
+				return arrayStr
+			}
+		}
+		endIdx++
+	}
+	return ""
 }
 
-func generateJWTCreateOrder() {
-	secret := "123456"
-	account := "SHOPEE"
-	timestamp := uint(time.Now().Unix())
-
-	// 1. Header (include account)
-	header := map[string]interface{}{
-		"alg":     "HS256",
-		"typ":     "JWT",
-		"account": account,
+// extractRequestID extracts the request ID after "HandleStandardWebhookTracking" in the message
+// Returns empty string "" if not found
+func extractRequestID(message string) string {
+	// Find "HandleStandardWebhookTracking" in the message
+	idx := strings.Index(message, "HandleStandardWebhookTracking")
+	if idx == -1 {
+		return ""
 	}
-	headerBytes, _ := json.Marshal(header)
-	headerEncoded := base64UrlEncode(headerBytes)
-	fmt.Println("timestamp : ", timestamp)
-	// 2. Payload
-	data := map[string]interface{}{
-		"idempotency_key": uuid.New().String(),
-		//"idempotency_key": "a27563ad-58a5-4cbd-a785-f096f5d35ab5",
-		"order": map[string]interface{}{
-			"reference_no":               "REF" + randomString(4) + randomDigits(4) + fmt.Sprint(timestamp),
-			"business_type":              1,
-			"delivery_type":              2,
-			"is_reverse":                 0,
-			"carrier_tn":                 "",
-			"total_weight":               410,
-			"estimate_chargeable_weight": 410,
-			"goods_value":                "85025",
-			"goods_value_non_tax":        "80000",
-		},
-		"item_info": []map[string]interface{}{
-			{
-				"item_name":        "Celana Chino Pendek / RIP Pria Kualitas Distro Premium",
-				"item_quantity":    1,
-				"item_price":       3423,
-				"category":         "Men Clothes",
-				"sub_category":     "Pants",
-				"sub_sub_category": "Chino",
-				"height":           0,
-				"width":            0,
-				"length":           0,
-			},
-			{
-				"item_name":        "Kaos Polos Premium Cotton Combed 30s",
-				"item_quantity":    2,
-				"item_price":       1500,
-				"category":         "Men Clothes",
-				"sub_category":     "Shirts",
-				"sub_sub_category": "T-Shirts",
-				"height":           0,
-				"width":            0,
-				"length":           0,
-			},
-		},
-		"sender_info": map[string]interface{}{
-			"name":           "John Doe",
-			"phone":          "123456789",
-			"country":        "SG",
-			"state":          "Singapore",
-			"city":           "Singapore",
-			"detail_address": "123 Orchard Road",
-			"remark":         "Handle with care",
-		},
-		"receiver_info": map[string]interface{}{
-			"name":           "Jane Smith",
-			"phone":          "987654321",
-			"country":        "SG",
-			"state":          "Singapore",
-			"city":           "Singapore",
-			"detail_address": "456 Marina Bay",
-			"remark":         "Fragile",
-		},
-		"service_info": map[string]interface{}{
-			"cod_amount":                "1000",                               // Example COD amount
-			"service_types":             "11,21,22",                           // Example service types
-			"schedule_pickup_date_time": time.Now().Add(1 * time.Hour).Unix(), // Example schedule pickup date time
-			"schedule_pickup_timeslot": map[string]interface{}{
-				"start_time": time.Now().Add(1 * time.Hour).Unix(),
-				"end_time":   time.Now().Add(2 * time.Hour).Unix(),
-			},
-		},
+	// Start after "HandleStandardWebhookTracking"
+	start := idx + len("HandleStandardWebhookTracking")
+	// Skip the pipe character if present
+	if start < len(message) && message[start] == '|' {
+		start++
 	}
-
-	payload := map[string]interface{}{
-		"data":      data,
-		"timestamp": time.Now().Unix(),
+	// Extract until the next pipe or end of string
+	end := start
+	for end < len(message) && message[end] != '|' {
+		end++
 	}
-	payloadBytes, _ := json.Marshal(payload)
-	payloadEncoded := base64UrlEncode(payloadBytes)
-
-	// 3. Signature
-	signingInput := headerEncoded + "." + payloadEncoded
-	signature := signHS256(signingInput, secret)
-
-	// 4. JWT Token
-	jwtToken := signingInput + "." + signature
-
-	fmt.Println("Generated JWT Token Create Order:")
-	fmt.Println(jwtToken)
+	requestID := message[start:end]
+	// Remove any remaining pipes (shouldn't be any, but just in case)
+	requestID = strings.ReplaceAll(requestID, "|", "")
+	// Trim whitespace
+	requestID = strings.TrimSpace(requestID)
+	return requestID
 }
 
-func generateJWTListOrder() {
-	secret := "123456"
-	account := "SHOPEE"
-
-	// 1. Header (include account)
-	header := map[string]interface{}{
-		"alg":     "HS256",
-		"typ":     "JWT",
-		"account": account,
-	}
-	headerBytes, _ := json.Marshal(header)
-	headerEncoded := base64UrlEncode(headerBytes)
-
-	// 2. Payload
-	data := map[string]interface{}{
-		"pageno": 2, // starting from 0,
-		"count":  5, // limit to 10 items
+// extractTrackingNumber extracts the tracking number from the payload
+// Searches for multiple possible field names: waybillNo, deliveryID, airwayBillNumber,
+// store_order_id, airwaybill_no, carrier_tn
+// Returns empty string "" if not found
+func extractTrackingNumber(payload string) string {
+	// List of possible tracking number field names to search for
+	fieldNames := []string{
+		"waybillNo",
+		"deliveryID",
+		"airwayBillNumber",
+		"store_order_id",
+		"airwaybill_no",
+		"carrier_tn", // Keep original as fallback
 	}
 
-	payload := map[string]interface{}{
-		"data":      data,
-		"timestamp": time.Now().Unix(),
+	// Try each field name
+	for _, fieldName := range fieldNames {
+		if trackingNumber := extractFieldValue(payload, fieldName); trackingNumber != "" {
+			return trackingNumber
+		}
 	}
-	payloadBytes, _ := json.Marshal(payload)
-	payloadEncoded := base64UrlEncode(payloadBytes)
 
-	// 3. Signature
-	signingInput := headerEncoded + "." + payloadEncoded
-	signature := signHS256(signingInput, secret)
-
-	// 4. JWT Token
-	jwtToken := signingInput + "." + signature
-
-	fmt.Println("Generated JWT List Order:")
-	fmt.Println(jwtToken)
+	return ""
 }
 
-func generateJWTUpdateOrder() {
-	secret := "123456"
-	account := "SHOPEE"
-
-	// 1. Header (include account)
-	header := map[string]interface{}{
-		"alg":     "HS256",
-		"typ":     "JWT",
-		"account": account,
-	}
-	headerBytes, _ := json.Marshal(header)
-	headerEncoded := base64UrlEncode(headerBytes)
-
-	// 2. Payload
-	data := map[string]interface{}{
-		"idempotency_key": uuid.New().String(),
-		"carrier_tn":      "CTNQain2223",
-		"sender_info": map[string]interface{}{
-			"name":           "candra",
-			"phone":          "123456789",
-			"country":        "SG",
-			"state":          "Singapore",
-			"city":           "Singapore",
-			"detail_address": "123 Orchard Road",
-			"remark":         "Handle with care",
-		},
-		"receiver_info": map[string]interface{}{
-			"name":           "Jane Smith",
-			"phone":          "987654321",
-			"country":        "SG",
-			"state":          "Singapore",
-			"city":           "Singapore",
-			"detail_address": "456 Marina Bay",
-			"remark":         "Fragile",
-		},
-		"service_info": map[string]interface{}{
-			"service_types": "Express",
-			"schedule_pickup_timeslot": map[string]interface{}{
-				"start_time": time.Now().Add(1 * time.Hour).Unix(),
-				"end_time":   time.Now().Add(2 * time.Hour).Unix(),
-			},
-		},
+// extractFieldValue extracts the value for a given field name from the payload
+func extractFieldValue(payload, fieldName string) string {
+	// Search for field name with various quote patterns
+	markers := []string{
+		`"` + fieldName + `":`,
+		`""` + fieldName + `"":`,
+		`"` + fieldName + `" :`,
+		`""` + fieldName + `"" :`,
 	}
 
-	payload := map[string]interface{}{
-		"data":      data,
-		"timestamp": time.Now().Unix(),
+	var startIdx int = -1
+	for _, marker := range markers {
+		idx := strings.Index(payload, marker)
+		if idx != -1 {
+			startIdx = idx + len(marker)
+			break
+		}
 	}
-	payloadBytes, _ := json.Marshal(payload)
-	payloadEncoded := base64UrlEncode(payloadBytes)
 
-	// 3. Signature
-	signingInput := headerEncoded + "." + payloadEncoded
-	signature := signHS256(signingInput, secret)
+	if startIdx == -1 {
+		return ""
+	}
 
-	// 4. JWT Token
-	jwtToken := signingInput + "." + signature
+	// Skip whitespace after the colon
+	for startIdx < len(payload) && (payload[startIdx] == ' ' || payload[startIdx] == '\t') {
+		startIdx++
+	}
 
-	fmt.Println("Generated JWT Token Update Order:")
-	fmt.Println(jwtToken)
+	if startIdx >= len(payload) {
+		return ""
+	}
+
+	// Skip opening quote(s) - could be " or ""
+	for startIdx < len(payload) && payload[startIdx] == '"' {
+		startIdx++
+	}
+
+	if startIdx >= len(payload) {
+		return ""
+	}
+
+	// Find the end of the value (closing quote or comma)
+	endIdx := startIdx
+	for endIdx < len(payload) {
+		if payload[endIdx] == '"' {
+			// Found closing quote
+			break
+		}
+		if payload[endIdx] == ',' || payload[endIdx] == '}' {
+			// Found end of value
+			break
+		}
+		endIdx++
+	}
+
+	if endIdx > startIdx {
+		value := payload[startIdx:endIdx]
+		// Remove any pipes if present
+		value = strings.ReplaceAll(value, "|", "")
+		// Trim whitespace
+		value = strings.TrimSpace(value)
+		return value
+	}
+
+	return ""
 }
 
-// json example
-// {
-//   "order": {
-//     "reference_no": "REF123456789",
-//     "business_type": 1,
-//     "delivery_type": 2,
-//     "is_reverse": 0,
-//     "carrier_tn": "",
-//     "total_weight": 410,
-//     "estimate_chargeable_weight": 410,
-//     "goods_value": "85025",
-//     "goods_value_non_tax": "80000"
-//   },
-//   "item_info": [
-//     {
-//       "item_name": "Celana Chino Pendek / RIP Pria Kualitas Distro Premium",
-//       "item_quantity": 1,
-//       "item_price": 3423,
-//       "category": "Men Clothes",
-//       "sub_category": "Pants",
-//       "sub_sub_category": "Chino",
-//       "height": 0,
-//       "width": 0,
-//       "length": 0
-//     },
-//     {
-//       "item_name": "Kaos Polos Premium Cotton Combed 30s",
-//       "item_quantity": 2,
-//       "item_price": 1500,
-//       "category": "Men Clothes",
-//       "sub_category": "Shirts",
-//       "sub_sub_category": "T-Shirts",
-//       "height": 0,
-//       "width": 0,
-//       "length": 0
-//     }
-//   ],
-//   "sender_info": {
-//     "name": "John Doe",
-//     "phone": "123456789",
-//     "country": "SG",
-//     "state": "Singapore",
-//     "city": "Singapore",
-//     "detail_address": "123 Orchard Road",
-//     "remark": "Handle with care"
-//   },
-//   "receiver_info": {
-//     "name": "Jane Smith",
-//     "phone": "987654321",
-//     "country": "SG",
-//     "state": "Singapore",
-//     "city": "Singapore",
-//     "detail_address": "456 Marina Bay",
-//     "remark": "Fragile"
-//   },
-//   "service_info": {
-//     "service_types": "Express",
-//     "schedule_pickup_timeslot": {
-//       "start_time": 1749493826,
-//       "end_time": 1749497426
-//     }
-//   }
-// }
+// connectDB establishes a connection to the MySQL database with optimized settings
+func connectDB() (*sql.DB, error) {
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPass, dbHost, dbPort, dbName)
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open database: %w", err)
+	}
+
+	// Optimize connection pool for large batch processing
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(5)
+	db.SetConnMaxLifetime(0) // Reuse connections
+
+	// Test the connection
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	return db, nil
+}
+
+// insertBatch inserts a batch of log data using a transaction with bulk INSERT
+func insertBatch(db *sql.DB, batch []logData) error {
+	if len(batch) == 0 {
+		return nil
+	}
+
+	// Start a transaction
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	// Build bulk INSERT query with multiple VALUES
+	query := `INSERT INTO entry_task.log_data_raw 
+		(id, payload, raw_message, request_id, timestamps, resource_id, tracking_number) 
+		VALUES`
+
+	// Build values placeholders and arguments
+	values := make([]string, 0, len(batch))
+	args := make([]interface{}, 0, len(batch)*7)
+
+	for _, data := range batch {
+		values = append(values, "(?, ?, ?, ?, ?, ?, ?)")
+		args = append(args, data.id, data.payload, data.rawMessage, data.requestID, data.timestamps, data.resourceID, data.trackingNumber)
+	}
+
+	// Combine query with all values
+	query += strings.Join(values, ", ")
+
+	// Execute the bulk insert
+	_, err = tx.Exec(query, args...)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to execute bulk insert: %w", err)
+	}
+
+	// Commit the transaction
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
